@@ -1,0 +1,113 @@
+# import sounddevice as sd
+# import numpy as np
+# import queue
+# import threading
+# import whisper
+# import your_zephyr_module  # Replace with actual Zephyr module
+# import pyttsx3
+# # Global variables
+# running = True
+# audio_queue = queue.Queue()
+
+# # Initialize Whisper model
+# whisper_model = whisper.load_model("tiny")  # Choose the appropriate model size
+
+# # Initialize Text-to-Speech engine
+# tts_engine = pyttsx3.init()
+
+# def wake_word_detected(audio_data):
+#     """
+#     Analyze the audio data to detect the wake word.
+#     Return True if the wake word is detected, False otherwise.
+#     """
+#     # Implement wake word detection logic
+#     return False
+
+# def audio_callback(indata, frames, time, status):
+#     """
+#     This is called for each audio buffer from the microphone.
+#     """
+#     if status:
+#         print(status, file=sys.stderr)
+#     audio_queue.put(indata.copy())
+
+# def listen_for_wake_word():
+#     """
+#     Listen to the microphone and check for the wake word.
+#     """
+#     global running
+#     with sd.InputStream(callback=audio_callback):
+#         while running:
+#             audio_data = audio_queue.get()
+#             if wake_word_detected(audio_data):
+#                 process_command()
+
+# def process_command():
+#     """
+#     Capture audio for the command, run it through Whisper, and pass it to Zephyr.
+#     """
+#     command_audio = capture_command_audio()  # Implement this function
+#     transcription = whisper_model.transcribe(command_audio)
+#     response = your_zephyr_module.generate_response(transcription)
+#     speak_response(response)
+
+# def capture_command_audio():
+#     """
+#     Capture the command audio. Implement logic to capture audio until a pause is detected.
+#     """
+#     # Implement audio capture with pause detection
+#     return b''  # Return the captured audio bytes
+
+# def speak_response(response_text):
+#     """
+#     Use the TTS engine to speak out the response.
+#     """
+#     tts_engine.say(response_text)
+#     tts_engine.runAndWait()
+
+# def main():
+#     listen_thread = threading.Thread(target=listen_for_wake_word)
+#     listen_thread.start()
+
+# if __name__ == "__main__":
+#     main()
+
+
+# import torch
+# from transformers import pipeline
+
+# pipe = pipeline("text-generation", model="HuggingFaceH4/zephyr-7b-beta", torch_dtype=torch.bfloat16, device_map="auto")
+
+# messages = [
+#     {
+#         "role": "system",
+#         "content": "You are a friendly chatbot who always responds in the style of a pirate",
+#     },
+#     {"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
+# ]
+# prompt = pipe.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+# outputs = pipe(prompt, max_new_tokens=256, do_sample=True, temperature=0.7, top_k=50, top_p=0.95)
+# print(outputs[0]["generated_text"])
+
+import torch
+from transformers import pipeline
+model_name = "HuggingFaceH4/zephyr-7b-beta"
+
+pipe = pipeline(
+    "text-generation",
+    model=model_name,
+    torch_dtype=torch.bfloat16,
+    device_map="auto",
+)
+
+prompt = "Write a Python function that can clean the HTML tags from the file:"
+
+outputs = pipe(
+    prompt,
+    max_new_tokens=300,
+    do_sample=True,
+    temperature=0.7,
+    top_k=50,
+    top_p=0.95,
+)
+print(outputs[0]["generated_text"])
