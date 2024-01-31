@@ -113,12 +113,55 @@
 # print(outputs[0]["generated_text"])
 
 
+# import ollama
+
+# stream = ollama.chat(
+#     model='stablelm-zephyr',
+#     messages=[
+#         {'role': 'user', 
+#          'content': 'Act as a smart speaker algorithm to decide which function to call. The speaker received the following user request: "What\\\'s the weather like today in Miami" You need to choose the most appropriate command from the list below to accurately respond to the user\\\'s needs.'},
+#         {'role': 'user',
+#          'content': 'Now, the user asks: "Set an alarm for 7 AM tomorrow." Choose the appropriate command.'},
+#         {'role': 'user',
+#          'content': 'Finally, the user requests: "Play some relaxing music." Select the relevant command from your options.'}
+#     ],
+#     stream=True,
+# )
+
+# for chunk in stream:
+#     print(chunk['message']['content'], end='', flush=True)
+
+
 import ollama
 
-stream = ollama.chat(
-    model='tinyllama',
-    messages = [{'role': 'user', 'content': 'Why is the sky blue?'}],
-    stream = True,
-)
-for chunck in stream:
-    print(chunck['message']['content'], end = '', flush=True)
+def format_user_input(input_text):
+    commands = ("Play Music, Set Alarm, Check Weather, Set Timer, Read News, Control Smart Home Devices, "
+                "Send a Message, Create Calendar Events, Play Audiobooks or Podcasts, Ask for Definitions or Facts, "
+                "Shopping List Additions, Play Radio, Call Uber, Set Reminders, Cooking Assistance, Translation Services, "
+                "Flight Information, Stock Market Updates, Find Phone, Bedtime Routine")
+    return (f'Act as a smart speaker algorithm to decide which function to call. The speaker received the following user request: "{input_text}" '
+            f'You need to choose the most appropriate command from the list below to accurately respond to the user\'s needs. '
+            f'Do not answer the question, just pick a function to call. Considering the context and the user\'s intent, '
+            f'which command should execute to best fulfill the user\'s request? Select from the options below. Reply with just the command name from the above list and nothing else. '
+            f'The available commands are: {commands}')
+
+def process_user_input_and_respond():
+    while True:
+        user_input = input("Enter your request (or type 'exit' to stop): ")
+        if user_input.lower() == 'exit':
+            break
+        formatted_input = format_user_input(user_input)
+        
+        # Assuming ollama.chat is the correct method based on your initial example
+        stream = ollama.chat(
+            model='stablelm-zephyr',
+            messages=[{'role': 'user', 'content': formatted_input}],
+            stream=True,
+        )
+
+        # Assuming the response is directly iterable and provides the desired output
+        for chunk in stream:
+            print(chunk['message']['content'], end='', flush=True)
+
+process_user_input_and_respond()
+
