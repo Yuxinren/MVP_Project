@@ -132,7 +132,170 @@
 #     print(chunk['message']['content'], end='', flush=True)
 
 
+# import ollama
+
+# def format_user_input(input_text):
+#     commands = ("Play Music, Set Alarm, Check Weather, Set Timer, Read News, Control Smart Home Devices, "
+#                 "Send a Message, Create Calendar Events, Play Audiobooks or Podcasts, Ask for Definitions or Facts, "
+#                 "Shopping List Additions, Play Radio, Call Uber, Set Reminders, Cooking Assistance, Translation Services, "
+#                 "Flight Information, Stock Market Updates, Find Phone, Bedtime Routine")
+#     return (f'Act as a smart speaker algorithm to decide which function to call. The speaker received the following user request: "{input_text}" '
+#             f'You need to choose the most appropriate command from the list below to accurately respond to the user\'s needs. '
+#             f'Do not answer the question, just pick a function to call. Considering the context and the user\'s intent, '
+#             f'which command should execute to best fulfill the user\'s request? Select from the options below. Reply with just the command name from the above list and nothing else. '
+#             f'The available commands are: {commands}')
+
+# def process_user_input_and_respond():
+#     while True:
+#         user_input = input("Enter your request (or type 'exit' to stop): ")
+#         if user_input.lower() == 'exit':
+#             break
+#         formatted_input = format_user_input(user_input)
+        
+#         # Assuming ollama.chat is the correct method based on your initial example
+#         stream = ollama.chat(
+#             model='stablelm-zephyr',
+#             messages=[{'role': 'user', 'content': formatted_input}],
+#             stream=True,
+#         )
+
+#         # Assuming the response is directly iterable and provides the desired output
+#         for chunk in stream:
+#             print(chunk['message']['content'], end='', flush=True)
+
+
+# import whisper
+# import pyaudio
+# import wave
+# import io
+# import contextlib
+# from gtts import gTTS
+# import playsound
+# import os
+
+# # Initialize Whisper model
+# model = whisper.load_model("base")
+
+# # Initialize PyAudio
+# p = pyaudio.PyAudio()
+
+# # Stream settings
+# FORMAT = pyaudio.paInt16
+# CHANNELS = 1
+# RATE = 16000
+# CHUNK = 1024
+# RECORD_SECONDS = 5
+
+# # Record audio for a fixed duration
+# def record_audio(duration=RECORD_SECONDS):
+#     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+#     print("* recording")
+#     frames = []
+
+#     for _ in range(0, int(RATE / CHUNK * duration)):
+#         data = stream.read(CHUNK)
+#         frames.append(data)
+
+#     print("* done recording")
+#     stream.stop_stream()
+#     stream.close()
+
+#     # Save the recorded data as a WAV file
+#     wf = wave.open("output.wav", 'wb')
+#     wf.setnchannels(CHANNELS)
+#     wf.setsampwidth(p.get_sample_size(FORMAT))
+#     wf.setframerate(RATE)
+#     wf.writeframes(b''.join(frames))
+#     wf.close()
+
+#     return "output.wav"
+
+# # Convert speech to text using Whisper
+# def speech_to_text(audio_file):
+#     result = model.transcribe(audio_file)
+#     command = result["text"]
+#     print(f"Command: {command}")
+#     return command
+
+# # Simulate Zephyr command processing
+# def process_command(command):
+#     # This is a placeholder for actual command processing
+#     return f"Processed command: {command}"
+
+# # Speak text using Google TTS
+# def speak_text(text):
+#     tts = gTTS(text=text, lang='en')
+#     tts.save("response.mp3")
+#     playsound.playsound("response.mp3")
+#     os.remove("response.mp3")
+
+# def main():
+#     while True:
+#         print("Say 'Hello' to activate...")
+#         # Wait for the wake word
+#         record_audio(3)  # Record a short clip to check for the wake word
+#         command = speech_to_text("output.wav")
+#         if "hello" in command.lower():
+#             audio_file = record_audio()
+#             command = speech_to_text(audio_file)
+#             response = process_command(command)
+#             speak_text(response)
+#         else:
+#             print("Wake word not detected.")
+
+# if __name__ == "__main__":
+#     main()
+
+
+
+
+
+import pyaudio
+import wave
+import whisper
 import ollama
+from gtts import gTTS
+import playsound
+import os
+
+# Initialize Whisper model
+model = whisper.load_model("base")
+
+# Initialize PyAudio
+p = pyaudio.PyAudio()
+
+# Stream settings
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 16000
+CHUNK = 1024
+RECORD_SECONDS = 5
+WAKE_WORD = "hello"
+
+def record_audio():
+    stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+    frames = []
+
+    for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+        data = stream.read(CHUNK)
+        frames.append(data)
+
+    stream.stop_stream()
+    stream.close()
+
+    wf = wave.open("output.wav", 'wb')
+    wf.setnchannels(CHANNELS)
+    wf.setsampwidth(p.get_sample_size(FORMAT))
+    wf.setframerate(RATE)
+    wf.writeframes(b''.join(frames))
+    wf.close()
+
+    return "output.wav"
+
+def speech_to_text(audio_file):
+    result = model.transcribe(audio_file)
+    command = result["text"]
+    return command
 
 def format_user_input(input_text):
     commands = ("Play Music, Set Alarm, Check Weather, Set Timer, Read News, Control Smart Home Devices, "
@@ -145,23 +308,51 @@ def format_user_input(input_text):
             f'which command should execute to best fulfill the user\'s request? Select from the options below. Reply with just the command name from the above list and nothing else. '
             f'The available commands are: {commands}')
 
-def process_user_input_and_respond():
+def process_with_ollama(user_input):
+    formatted_input = format_user_input(user_input)
+    
+    stream = ollama.chat(
+        model='stablelm-zephyr',
+        messages=[{'role': 'user', 'content': formatted_input}],
+        stream=True,
+    )
+
+    response_content = ""
+    for chunk in stream:
+        response_content += chunk['message']['content']
+
+    return response_content
+def speak_text(text):
+    tts = gTTS(text=text, lang='en')
+    tts_file = "tts_output.mp3"
+    tts.save(tts_file)
+    playsound.playsound(tts_file)
+    os.remove(tts_file)
+
+def is_wake_word_present(command, wake_word=WAKE_WORD):
+    return wake_word in command.lower()
+
+def main():
+    print("Say 'Hello' to start the session.")
     while True:
-        user_input = input("Enter your request (or type 'exit' to stop): ")
-        if user_input.lower() == 'exit':
-            break
-        formatted_input = format_user_input(user_input)
-        
-        # Assuming ollama.chat is the correct method based on your initial example
-        stream = ollama.chat(
-            model='stablelm-zephyr',
-            messages=[{'role': 'user', 'content': formatted_input}],
-            stream=True,
-        )
+        audio_file = record_audio()
+        command = speech_to_text(audio_file)
 
-        # Assuming the response is directly iterable and provides the desired output
-        for chunk in stream:
-            print(chunk['message']['content'], end='', flush=True)
+        if is_wake_word_present(command):
+            print("Session activated. Start speaking your commands.")
+            while True:
+                audio_file = record_audio()
+                command = speech_to_text(audio_file)
 
-process_user_input_and_respond()
+                if command.lower() == 'exit':
+                    print("Exiting session.")
+                    break
+
+                print(f"User Input: {command}")
+                zephyr_command = process_with_ollama(command)
+                print(f"Zephyr Command: {zephyr_command}")
+                speak_text(zephyr_command)
+
+if __name__ == "__main__":
+    main()
 
